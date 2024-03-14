@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Translator</title>
+    <script type="text/javascript">
+      /* Helpers */
+      function romanToInt(s) {
+        const sym = {
+          I: 1,
+          V: 5,
+          X: 10,
+          L: 50,
+          C: 100,
+          D: 500,
+          M: 1000,
+        };
+
+        let result = 0;
+
+        for (let i = 0; i < s.length; i++) {
+          const cur = sym[s[i]];
+          const next = sym[s[i + 1]];
+
+          if (cur < next) {
+            result += next - cur;
+            i++; // Skip the next character as it has been used.
+          } else {
+            result += cur;
+          }
+        }
+
+        return result;
+      }
+
+      function getNumberWithOrdinal(n) {
+        var s = ["th", "st", "nd", "rd"],
+          v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+      }
+
+      /* Interlanguage relations */
+      var relations = [
+        {
+          ka: "ა",
+          down: {
+            en: "a",
+            ru: "а",
+          },
+          up: {
+            en: "A",
+            ru: "А",
+          },
+        },
+        {
+          ka: "ბ",
+          down: {
+            en: "b",
+            ru: "б",
+          },
+          up: {
+            en: "B",
+            ru: "Б",
+          },
+        },
+        {
+          ka: "გ",
+          down: {
+            en: "g",
+            ru: "г",
+          },
+          up: {
+            en: "G",
+            ru: "Г",
+          },
+        },
+        {
+          ka: "დ",
+          down: {
+            en: "d",
+            ru: "д",
+          },
+          up: {
+            en: "D",
+            ru: "Д",
+          },
+        },
+        {
+          ka: "ე",
+          down: {
+            en: "e",
+            ru: "е",
+          },
+          up: {
+            en: "E",
+            ru: "Э",
+          },
+        },
+        {
+          ka: "ვ",
+          down: {
+            en: "v",
+            ru: "в",
+          },
+          up: {
+            en: "V",
+            ru: "В",
+          },
+        },
+        {
+          ka: "ზ",
+          down: {
+            en: "z",
+            ru: "з",
+          },
+          up: {
+            en: "Z",
+            ru: "З",
+          },
+        },
+        {
+          ka: "თ",
+          down: {
+            en: "t",
+            ru: "т",
+          },
+          up: {
+            en: "T",
+            ru: "Т",
+          },
+        },
+        {
+          ka: "ი",
+          down: {
+            en: "i",
+            ru: "и",
+          },
+          up: {
+            en: "I",
+            ru: "И",
+          },
+        },
+        {
+          ka: "კ",
+          down: {
+            en: "k",
+            ru: "к",
+          },
+          up: {
+            en: "K",
+            ru: "К",
+          },
+        },
+        {
+          ka: "ლ",
+          down: {
+            en: "l",
+            ru: "л",
+          },
+          up: {
+            en: "L",
+            ru: "Л",
+          },
+        },
+        {
+          ka: "მ",
+          down: {
+            en: "m",
+            ru: "м",
+          },
+          up: {
+            en: "M",
+            ru: "М",
+          },
+        },
+        {
+          ka: "ნ",
+          down: {
+            en: "n",
+            ru: "н",
+          },
+          up: {
+            en: "N",
+            ru: "Н",
+          },
+        },
+        {
+          ka: "ო",
+          down: {
+            en: "o",
+            ru: "о",
+          },
+          up: {
+            en: "O",
+            ru: "О",
+          },
+        },
+        {
+          ka: "პ",
+          down: {
+            en: "p",
+            ru: "п",
+          },
+          up: {
+            en: "P",
+            ru: "П",
+          },
+        },
+        {
+          ka: "ჟ",
+          down: {
+            en: "zh",
+            ru: "ж",
+          },
+          up: {
+            en: "Zh",
+            ru: "Ж",
+          },
+        },
+        {
+          ka: "რ",
+          down: {
+            en: "r",
+            ru: "р",
+          },
+          up: {
+            en: "R",
+            ru: "Р",
+          },
+        },
+        {
+          ka: "ს",
+          down: {
+            en: "s",
+            ru: "с",
+          },
+          up: {
+            en: "S",
+            ru: "С",
+          },
+        },
+        {
+          ka: "ტ",
+          down: {
+            en: "t",
+            ru: "т",
+          },
+          up: {
+            en: "T",
+            ru: "Т",
+          },
+        },
+        {
+          ka: "უ",
+          down: {
+            en: "u",
+            ru: "у",
+          },
+          up: {
+            en: "U",
+            ru: "У",
+          },
+        },
+        {
+          ka: "ფ",
+          down: {
+            en: "p",
+            ru: "п",
+          },
+          up: {
+            en: "P",
+            ru: "П",
+          },
+        },
+        {
+          ka: "ქ",
+          down: {
+            en: "k",
+            ru: "к",
+          },
+          up: {
+            en: "K",
+            ru: "К",
+          },
+        },
+        {
+          ka: "ღ",
+          down: {
+            en: "gh",
+            ru: "г",
+          },
+          up: {
+            en: "Gh",
+            ru: "Г",
+          },
+        },
+        {
+          ka: "ყ",
+          down: {
+            en: "q",
+            ru: "к",
+          },
+          up: {
+            en: "Q",
+            ru: "К",
+          },
+        },
+        {
+          ka: "შ",
+          down: {
+            en: "sh",
+            ru: "ш",
+          },
+          up: {
+            en: "Sh",
+            ru: "Ш",
+          },
+        },
+        {
+          ka: "ჩ",
+          down: {
+            en: "ch",
+            ru: "ч",
+          },
+          up: {
+            en: "Ch",
+            ru: "Ч",
+          },
+        },
+        {
+          ka: "ც",
+          down: {
+            en: "ts",
+            ru: "ц",
+          },
+          up: {
+            en: "Ts",
+            ru: "Ц",
+          },
+        },
+        {
+          ka: "ძ",
+          down: {
+            en: "dz",
+            ru: "дз",
+          },
+          up: {
+            en: "Dz",
+            ru: "Дз",
+          },
+        },
+        {
+          ka: "წ",
+          down: {
+            en: "ts",
+            ru: "ц",
+          },
+          up: {
+            en: "Ts",
+            ru: "Ц",
+          },
+        },
+        {
+          ka: "ჭ",
+          down: {
+            en: "ch",
+            ru: "ч",
+          },
+          up: {
+            en: "Ch",
+            ru: "Ч",
+          },
+        },
+        {
+          ka: "ხ",
+          down: {
+            en: "kh",
+            ru: "х",
+          },
+          up: {
+            en: "Kh",
+            ru: "Х",
+          },
+        },
+        {
+          ka: "ჯ",
+          down: {
+            en: "j",
+            ru: "дж",
+          },
+          up: {
+            en: "J",
+            ru: "Дж",
+          },
+        },
+        {
+          ka: "ჰ",
+          down: {
+            en: "h",
+            ru: "х",
+          },
+          up: {
+            en: "H",
+            ru: "Х",
+          },
+        },
+        {
+          ka: "ია",
+          down: {
+            en: "ia",
+            ru: "ия",
+          },
+        },
+        {
+          ka: "(",
+          up: {
+            en: "(",
+            ru: "(",
+          },
+          down: {
+            en: "(",
+            ru: "(",
+          },
+        },
+        {
+          ka: ")",
+          up: {
+            en: ")",
+            ru: ")",
+          },
+          down: {
+            en: ")",
+            ru: ")",
+          },
+        },
+        {
+          ka: "-",
+          up: {
+            en: "-",
+            ru: "-",
+          },
+          down: {
+            en: "-",
+            ru: "-",
+          },
+        },
+      ];
+
+      var types = [
+        {
+          ka: "ქუჩა",
+          en: "Street",
+          ru: "улица",
+        },
+        {
+          ka: "გამზირი",
+          en: "Avenue",
+          ru: "проспект",
+        },
+        {
+          ka: "ბულვარი",
+          en: "Boulevard",
+          ru: "бульвар",
+        },
+        {
+          ka: "ჩიხი",
+          en: "Dead End",
+          ru: "тупик",
+        },
+        {
+          ka: "შესახვევი",
+          en: "Lane",
+          ru: "переулок",
+        },
+        {
+          ka: "გასასვლელი",
+          en: "Exit",
+          ru: "съезд",
+        },
+        {
+          ka: "აღმართი",
+          en: "Ascent",
+          ru: "подъём",
+        },
+        {
+          ka: "სანაპირო",
+          en: "Embankment",
+          ru: "набережная",
+        },
+        {
+          ka: "მოედანი",
+          en: "Square",
+          ru: "площадь",
+        },
+        {
+          ka: "დაღმართი",
+          en: "Downhill",
+          ru: "склон",
+        },
+        {
+          ka: "გზატკეცილი",
+          en: "Highway",
+          ru: "шоссе",
+        },
+        {
+          ka: "ხიდი",
+          en: "Bridge",
+          ru: "мост",
+        },
+        {
+          ka: "ხეივანი",
+          en: "Alley",
+          ru: "аллея",
+        },
+      ];
+
+      /* Main function */
+      function convert() {
+        var value = document.getElementById("kaname").value;
+        var numeral;
+        if (value) {
+          var dedicated = value.split(" ");
+          var result = {
+            name: value,
+            "name:ka": value,
+            "name:en": "",
+            "name:ru": "",
+          };
+          var pureName = dedicated.slice(0, -1);
+          pureName.forEach((word) => {
+            if (word.match(/[IVX]/g)) {
+              numeral = romanToInt(word);
+            } else if (!Number.isNaN(Number(word))) {
+              numeral = Number(word);
+            } else {
+              result["name:ru"] += " ";
+              if (word.endsWith("ძის")) {
+                word = word.slice(0, -2) + "ე";
+              } else if (word.endsWith("ას") || word.endsWith("ის") || word.endsWith("ოს")) {
+                word = word.slice(0, -1);
+              }
+              word.split("").forEach((letter, i) => {
+                var temp = relations.find((dict) => dict.ka === letter);
+                result["name:en"] += i === 0 ? temp.up.en : temp.down.en;
+                result["name:ru"] +=
+                  word.length - 1 === i && word.slice(-2) === "ია"
+                    ? "я"
+                    : i === 0
+                    ? temp.up.ru
+                    : temp.down.ru;
+              });
+              result["name:en"] += " ";
+            }
+          });
+          var type = types.find(
+            (elem) => elem.ka === dedicated[dedicated.length - 1]
+          );
+          result["name:en"] +=
+            (numeral ? getNumberWithOrdinal(numeral) + " " : "") + type.en;
+          result["name:ru"] =
+            (numeral
+              ? `${numeral}-${
+                  type.ka === "სანაპირო" || type.ka === "ქუჩა" ? "я" : "й"
+                } `
+              : "") +
+            type.ru +
+            result["name:ru"];
+          var processed = "";
+          Object.entries(result).forEach((elem) => {
+            processed += `${elem[0]}=${elem[1]}\r\n`;
+          });
+          document.getElementById("result").value = processed;
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <form action="javascript:convert()">
+      <label for="kaname">Name in ka:</label><br />
+      <input style="width: 400px" id="kaname" type="text" /><br />
+    </form>
+    <i>press enter to process</i><br /><br />
+
+    <textarea
+      style="width: 400px"
+      id="result"
+      name="result"
+      rows="5"
+    ></textarea>
+  </body>
+</html>
